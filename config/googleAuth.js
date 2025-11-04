@@ -4,11 +4,11 @@ const User = require("../models/userModel");
 const jwt = require("jsonwebtoken");
 
 passport.use(
-  new GoogleStrategy(
+  new GoogleStrategy( 
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "http://localhost:2030/api/v1/auth/google/callback",
+      callbackURL: "https://andrewecomerceback.onrender.com/api/v1/auth/google/callback",
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
@@ -36,7 +36,7 @@ passport.use(
         // ✅ Create JWT token exactly like manual login
         const token = jwt.sign(
           { userId: user._id, email: user.email },
-          process.env.JWT_SECRET,
+          process.env.jwt_secret ,
           { expiresIn: "7d" }
         );
 
