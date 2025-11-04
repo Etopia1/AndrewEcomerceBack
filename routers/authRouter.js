@@ -20,7 +20,7 @@ router.get(
     const userId = req.user._id;
 
     // Redirect to frontend with query params
-    res.redirect(`http://localhost:5173/#/userlogin?token=${token}&userId=${userId}`);
+    res.redirect(`https://sydney-collection.vercel.app/#/userlogin?token=${token}&userId=${userId}`);
   }
 );
 
