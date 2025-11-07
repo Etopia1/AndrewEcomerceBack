@@ -2,6 +2,7 @@ const categoryModel = require('../models/categoryModel');
 const cloudinary = require('../untils/cloudinary');
 const fs = require('fs');
 const mongoose = require(`mongoose`)
+const Order = require('../models/orderModel');
 const productModel = require("../models/ProductModel")
 
 // Create a new category
@@ -146,7 +147,6 @@ const getAllCategories = async (req, res) => {
 //   } catch (error) {
 //     res.status(500).json({ message: error.message });
 //   }
-// };
 const getCategoryById = async (req, res) => {
   try {
     const { categoryId } = req.params;
@@ -161,6 +161,7 @@ const getCategoryById = async (req, res) => {
     if (!category) {
       return res.status(404).json({ message: 'Category not found.' });
     }
+    
 
     // Fetch products that belong to this category, with all details (id, name, price, etc.)
     const products = await productModel
@@ -180,6 +181,7 @@ const getCategoryById = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+// };
 
 
 // Update a category
@@ -288,6 +290,56 @@ const deleteCategory = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+const getCategoryDistribution = async (req, res) => {
+  try {
+    const categorySales = await Order.aggregate([
+      { $unwind: "$items" },
+      {
+        $lookup: {
+          from: "products",
+          localField: "items.product",
+          foreignField: "_id",
+          as: "productDetails",
+        },
+      },
+      { $unwind: "$productDetails" },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "productDetails.category",
+          foreignField: "_id",
+          as: "categoryDetails",
+        },
+      },
+      { $unwind: "$categoryDetails" },
+
+      // ✅ Convert string to number to fix $multiply error
+      {
+        $addFields: {
+          numericPrice: { $toDouble: "$items.price" },
+          numericQty: { $toInt: "$items.quantity" },
+        },
+      },
+
+      {
+        $group: {
+          _id: "$categoryDetails._id",
+          name: { $first: "$categoryDetails.categoryName" },
+          totalSales: { $sum: { $multiply: ["$numericPrice", "$numericQty"] } },
+        },
+      },
+      { $sort: { totalSales: -1 } },
+    ]);
+
+    res.status(200).json({
+      message: "Category distribution fetched successfully",
+      data: categorySales,
+    });
+  } catch (error) {
+    console.error("Error fetching category distribution:", error);
+    res.status(500).json({ message: error.message });
+  }
+}
 
 
 module.exports = {
@@ -296,5 +348,6 @@ module.exports = {
   getCategoryById,
   updateCategory,
   deleteCategory,
-  searchCategory
+  searchCategory,
+  getCategoryDistribution
 };

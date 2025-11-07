@@ -6,7 +6,9 @@ const {
   getCategoryById,
   updateCategory,
   deleteCategory,
-  searchCategory
+  searchCategory,
+  getCategoryDistribution
+
 } = require('../controllers/categoryController');
 const { authorize} = require(`../middlewares/Auth`)
 
@@ -18,5 +20,6 @@ router.get('/category', searchCategory); // Get all categories
 router.get('/category/:categoryId', getCategoryById); // Get a category by ID
 router.put('/category/:categoryId', authorize, updateCategory); // Update a category by ID
 router.delete('/category/:categoryId', authorize,  deleteCategory); // Delete a category by ID
+router.get('/category-distribution', getCategoryDistribution);
 
 module.exports = router;

@@ -152,7 +152,7 @@ const getOneProduct = async (req, res) => {
     const { productId } = req.params;
     if (!mongoose.Types.ObjectId.isValid(productId)) {
         return res.status(400).json({ message: 'Invalid ID format.' });}
-    const product = await productModel.findById(productId).populate('merchant');
+    const product = await productModel.findById(productId).populate('merchant').populate("category", "categoryName categoryDescription categoryImage"); // ✅
     // const product2 = await catergoryModel.findById( productId ).populate('category')
     if (!product ) {
       return res.status(404).json('Product not found.');
@@ -176,40 +176,90 @@ const getOneProduct = async (req, res) => {
 };
 
 // Get all products for a specific store (merchant)
+// const getAllForOneStore = async (req, res) => {
+//   try {
+//     const { merchantId } = req.params;
+//     if (!mongoose.Types.ObjectId.isValid(merchantId)) {
+//         return res.status(400).json({ message: 'Invalid ID format.' });}
+//     const merchantStore = await merchantModel.findById(merchantId).populate('products');
+//     if (!merchantStore) {
+//       return res.status(404).json("Store not found.");
+//     }
+//     res.status(200).json({
+//       message: `All products found.`,
+//       data: merchantStore.products, // Return only products
+//     });
+//   } catch (error) {
+//     res.status(500).json({message:error.message});
+//   }
+// };
+// Get all products for a specific store (merchant)
 const getAllForOneStore = async (req, res) => {
   try {
     const { merchantId } = req.params;
+
+    // Validate merchant ID
     if (!mongoose.Types.ObjectId.isValid(merchantId)) {
-        return res.status(400).json({ message: 'Invalid ID format.' });}
-    const merchantStore = await merchantModel.findById(merchantId).populate('products');
-    if (!merchantStore) {
-      return res.status(404).json("Store not found.");
+      return res.status(400).json({ message: "Invalid ID format." });
     }
+
+    // Find the merchant and populate their products, including category info
+    const merchantStore = await merchantModel
+      .findById(merchantId)
+      .populate({
+        path: "products", // Get all products linked to this merchant
+        populate: {
+          path: "category", // Populate category inside each product
+          select: "categoryName categoryDescription categoryImage", // Only these fields
+        },
+      });
+
+    // Handle missing store
+    if (!merchantStore) {
+      return res.status(404).json({ message: "Store not found." });
+    }
+
+    // Check if store has any products
+    if (!merchantStore.products || merchantStore.products.length === 0) {
+      return res.status(404).json({ message: "No products found for this store." });
+    }
+
+    // Return response
     res.status(200).json({
-      message: `All products found.`,
-      data: merchantStore.products, // Return only products
+      message: `All products for ${merchantStore.storeName || "merchant"} retrieved successfully.`,
+      data: merchantStore.products, // ✅ Includes populated category data
     });
   } catch (error) {
-    res.status(500).json({message:error.message});
+    res.status(500).json({ message: error.message });
   }
 };
 
+
+// Get all products
 // Get all products
 const getAllProducts = async (req, res) => {
   try {
-    const products = await productModel.find()
-    if (products.length === 0) {
-      return res.status(404).json("No products found.");
+    // Fetch all products and populate both merchant and category info
+    const products = await productModel
+      .find()
+      .populate("merchant") // Include full merchant details
+      .populate("category", "categoryName categoryDescription categoryImage"); // ✅ Include only key category fields
+
+    // Handle if no products exist
+    if (!products || products.length === 0) {
+      return res.status(404).json({ message: "No products found." });
     }
 
+    // Return all populated products
     res.status(200).json({
-      message: 'Products found.',
+      message: "Products retrieved successfully.",
       data: products,
     });
   } catch (error) {
-    res.status(500).json({message:error.message});
+    res.status(500).json({ message: error.message });
   }
 };
+
 
 
 const getTopProducts = async (req, res) => {

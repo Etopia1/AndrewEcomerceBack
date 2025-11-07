@@ -1,38 +1,35 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-
-// Import the controller
 const {
-    checkout,
-    confirmOrder,
-    getAllOrders,
-    getMerchantOrders,
-    getOrderDetails,
-    updateOrderStatus,
-    userDeleteOrder
-} = require('../controllers/orderController');
-const midasValidator = require('../middlewares/validator')
- // Adjust the path if necessary
-const { authenticate} = require("../middlewares/Auth")
-const {authorize} = require('../middlewares/Auth')
+  checkout,
+  confirmOrder,
+  getAllOrders,
+  getMerchantOrders,
+  getOrderDetails,
+  updateMerchantOrderStatus,
+  getMerchantOrderById,
+  userDeleteOrder,
+  getMerchantEarnings,
+  getSalesTrend,
+  getTopSellingProducts
+} = require("../controllers/orderController");
+const { authenticate, authorize } = require("../middlewares/Auth");
 
-// Middleware for authentication (this should be your authentication logic)
-// const authenticateUser = require('');
+// 🛒 Checkout routes
+router.post("/checkout", authenticate, checkout);
+router.post("/confirm-order", authenticate, confirmOrder);
 
+// 📦 User orders
+router.get("/orders", authenticate, getAllOrders);
+router.get("/getOrderDetails/:orderId", authenticate, getOrderDetails);
+router.delete("/userdeleteOrder/:orderId", authenticate, userDeleteOrder);
 
-// Route for checkout
-router.post('/checkout', authenticate, checkout);
-
-// Route for confirming an order
-router.post('/confirm-order' , authenticate, confirmOrder);
-
-// Route for fetching all orders for the user
-router.get('/orders', authenticate, getAllOrders);
-router.get('/getOrderDetails/:orderId', authenticate, getOrderDetails);
-router.put('/updateStatus/:orderId', authorize, updateOrderStatus);
-router.delete('/userdeleteOrder/:orderId', authenticate, userDeleteOrder);
-
-// Route for fetching merchant orders
-router.get('/merchant-orders', authorize, getMerchantOrders);
+// 🧑‍💼 Merchant routes
+router.get("/merchant/earnings/:merchantId", getMerchantEarnings);
+router.get("/merchant-orders/:merchantId", getMerchantOrders);
+router.get("/top-selling", getTopSellingProducts);
+router.get("/sales-trend", getSalesTrend);
+router.get("/merchant-order/:orderId", getMerchantOrderById);
+router.patch("/merchant-order/:orderId/status", authorize, updateMerchantOrderStatus);
 
 module.exports = router;
